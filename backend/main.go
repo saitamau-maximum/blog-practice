@@ -42,6 +42,7 @@ const (
 
 
 func main() {
+	dbInit()
 	http.HandleFunc("/", IndexHandler)
 	fmt.Println("http://localhost:8080 で起動しています...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -61,4 +62,21 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+}
+
+func dbConnect() *sqlx.DB {
+	// SQLite3のデータベースに接続
+	db, err := sqlx.Open("sqlite3", dbfileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return db
+}
+
+func dbInit() {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルを作成
+	db.MustExec(createPostTable)
 }
