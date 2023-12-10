@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"text/template"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const Template = "../frontend"
-
 
 
 func main() {
@@ -30,5 +32,5 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 }
