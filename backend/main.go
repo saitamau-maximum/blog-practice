@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 	"strconv"
 	"text/template"
 
@@ -39,6 +40,9 @@ const (
 	// ブログポストテーブルのデータを全削除するSQL文
 	deleteAllPostTable = `DELETE FROM posts`
 
+	// last_insert_rowid()を使って最後に挿入したデータのIDを取得するSQL文
+	lastInsertID = `SELECT last_insert_rowid() AS id`
+
 )
 
 type Post struct {
@@ -55,6 +59,8 @@ func main() {
 	http.HandleFunc("/", IndexHandler)
 	// blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる
 	http.HandleFunc("/post/", BlogHandler)
+	// create-post用のハンドラーを追加
+	http.HandleFunc("/create-post", CreatePostHandler)
 	fmt.Println("http://localhost:8080 で起動しています...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -67,7 +73,9 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	// ブログポストをテンプレートに渡す
-	t.Execute(w, posts)
+	t.ExecuteTemplate(w, "index.html", map[string]interface{}{
+		"Posts": posts,
+	})
 
 }
 
@@ -86,7 +94,37 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 	// ブログポストを1件取得
 	post := dbGetOne(idInt)
 	// ブログポストをテンプレートに渡す
-	t.Execute(w, post)
+	t.ExecuteTemplate(w, "post.html", map[string]interface{}{
+		"Title":     post.Title,
+		"Body":      post.Body,
+		"Author":    post.Author,
+		"CreatedAt": post.CreatedAt,
+	})
+}
+
+func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles(Template + "/create-post.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if r.Method == "GET" {
+		// GETリクエストの場合はテンプレートを表示
+		t.Execute(w, nil)
+	} else if r.Method == "POST" {
+		// POSTリクエストの場合はブログポストを作成
+		title := r.FormValue("title")
+		body := r.FormValue("body")
+		author := r.FormValue("author")
+		createdAt := time.Now().Format("2006-01-02 15:04:05")
+		dbInsert(title, body, author, createdAt)
+		// 最後に挿入したデータのIDを取得
+		var id int
+		dbGetLastInsertID := dbConnect()
+		defer dbGetLastInsertID.Close()
+		dbGetLastInsertID.Get(&id, lastInsertID)
+		// 作成したブログポストを表示
+		http.Redirect(w, r, "/blog/"+strconv.Itoa(id), http.StatusFound)
+	}
 }
 
 func dbConnect() *sqlx.DB {

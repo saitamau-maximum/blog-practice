@@ -8,9 +8,10 @@
   <body>
     <!-- Goのテンプレートエンジンからブログのタイトルと作成者と日時を取得してリスト表示する -->
     <h1>ブログ一覧</h1>
+    <a href="/create-post">新規作成</a>
     <ul>
       {{range .Posts}}
-      <li href="/blog/{{.ID}}">{{.Title}} by {{.Author}} on {{.Date}}</li>
+      <li><a href="/post/{{.ID}}">{{.Title}} by {{.Author}} on {{.Date}}</a></li>
       {{end}}
     </ul>
   </body>
