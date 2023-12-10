@@ -1,9 +1,10 @@
 package main
 
 import (
-	"net/http"
 	"fmt"
 	"log"
+	"net/http"
+	"strconv"
 	"text/template"
 
 	"github.com/jmoiron/sqlx"
@@ -52,24 +53,40 @@ type Post struct {
 func main() {
 	dbInit()
 	http.HandleFunc("/", IndexHandler)
+	// blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる
+	http.HandleFunc("/post/", BlogHandler)
 	fmt.Println("http://localhost:8080 で起動しています...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles(Template + "/index.html")
-	// {{.Title}}と{{.Body}}に対して、それぞれ"Hello, World"と"こんにちは、世界"を埋め込む
-	t.Execute(w, struct {
-		Title string
-		Body  string
-	}{
-		Title: "Hello, World",
-		Body:  "こんにちは、世界",
-	})
+	// ブログポストを全件取得
+	posts := dbGetAll()
 	if err != nil {
 		log.Fatal(err)
 	}
+	// ブログポストをテンプレートに渡す
+	t.Execute(w, posts)
 
+}
+
+func BlogHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles(Template + "/post.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// /blog/idの形式でアクセスされた場合にidを取得
+	id := r.URL.Path[len("/blog/"):]
+	// idをint型に変換
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// ブログポストを1件取得
+	post := dbGetOne(idInt)
+	// ブログポストをテンプレートに渡す
+	t.Execute(w, post)
 }
 
 func dbConnect() *sqlx.DB {
@@ -106,6 +123,10 @@ func dbGetAll() []Post {
 	// ブログポストテーブルからデータを取得
 	var posts []Post
 	db.Select(&posts, selectPostTable)
+	// 何も取得できなかった場合は空のスライスを返す
+	if len(posts) == 0 {
+		return []Post{}
+	}
 	return posts
 }
 

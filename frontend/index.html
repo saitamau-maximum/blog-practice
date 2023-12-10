@@ -1,12 +1,17 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
   <head>
-    <meta charset="utf-8">
-    <title>{{.Title}}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <title>ブログ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
-    <h1>{{.Title}}</h1>
-    <h2>{{.Body}}</h2>
+    <!-- Goのテンプレートエンジンからブログのタイトルと作成者と日時を取得してリスト表示する -->
+    <h1>ブログ一覧</h1>
+    <ul>
+      {{range .Posts}}
+      <li href="/blog/{{.ID}}">{{.Title}} by {{.Author}} on {{.Date}}</li>
+      {{end}}
+    </ul>
   </body>
 </html>
