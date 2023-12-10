@@ -16,14 +16,15 @@ const Template = "../frontend"
 
 const (
 	dbfileName = "../db/db.sqlite3"
-	// ブログポストテーブルを作成するSQL文
+	//ブログポストテーブルを作成するSQL文
 	createPostTable = `CREATE TABLE IF NOT EXISTS posts (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		title TEXT,
 		body TEXT,
 		author TEXT,
-		created_at TEXT
+		created_at INTEGER
 	)`
+	
 
 	// ブログポストテーブルにデータを挿入するSQL文
 	insertPostTable = `INSERT INTO posts (title, body, author, created_at) VALUES (?, ?, ?, ?)`
@@ -45,12 +46,13 @@ const (
 
 )
 
+
 type Post struct {
 	ID        int    `db:"id"`
 	Title     string `db:"title"`
 	Body      string `db:"body"`
 	Author    string `db:"author"`
-	CreatedAt string `db:"created_at"`
+	CreatedAt int64 `db:"created_at"`
 }
 
 
@@ -66,7 +68,12 @@ func main() {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles(Template + "/index.html")
+	funcDate := template.FuncMap{
+		"date": func(t int64) string {
+			return time.Unix(t, 0).Format("2006-01-02 15:04:05")
+		},
+	}
+	t, err := template.New("index.html").Funcs(funcDate).ParseFiles(Template + "/index.html")
 	// ブログポストを全件取得
 	posts := dbGetAll()
 	if err != nil {
@@ -85,9 +92,10 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	// /blog/idの形式でアクセスされた場合にidを取得
-	id := r.URL.Path[len("/blog/"):]
+	id := r.URL.Path[len("/post/"):]
 	// idをint型に変換
 	idInt, err := strconv.Atoi(id)
+	println(idInt)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +106,7 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 		"Title":     post.Title,
 		"Body":      post.Body,
 		"Author":    post.Author,
-		"CreatedAt": post.CreatedAt,
+		"CreatedAt": time.Unix(post.CreatedAt, 0).Format("2006-01-02 15:04:05"),
 	})
 }
 
@@ -115,7 +123,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		title := r.FormValue("title")
 		body := r.FormValue("body")
 		author := r.FormValue("author")
-		createdAt := time.Now().Format("2006-01-02 15:04:05")
+		createdAt := time.Now().Unix()
 		dbInsert(title, body, author, createdAt)
 		// 最後に挿入したデータのIDを取得
 		var id int
@@ -123,7 +131,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		defer dbGetLastInsertID.Close()
 		dbGetLastInsertID.Get(&id, lastInsertID)
 		// 作成したブログポストを表示
-		http.Redirect(w, r, "/blog/"+strconv.Itoa(id), http.StatusFound)
+		http.Redirect(w, r, "/post/"+strconv.Itoa(id), http.StatusFound)
 	}
 }
 
@@ -145,7 +153,7 @@ func dbInit() {
 }
 
 // ブログポストを作成
-func dbInsert(title string, body string, author string, createdAt string) {
+func dbInsert(title string, body string, author string, createdAt int64) {
 	db := dbConnect()
 	defer db.Close()
 
