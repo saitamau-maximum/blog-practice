@@ -40,6 +40,14 @@ const (
 
 )
 
+type Post struct {
+	ID        int    `db:"id"`
+	Title     string `db:"title"`
+	Body      string `db:"body"`
+	Author    string `db:"author"`
+	CreatedAt string `db:"created_at"`
+}
+
 
 func main() {
 	dbInit()
@@ -80,3 +88,62 @@ func dbInit() {
 	// ブログポストテーブルを作成
 	db.MustExec(createPostTable)
 }
+
+// ブログポストを作成
+func dbInsert(title string, body string, author string, createdAt string) {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルにデータを挿入
+	db.MustExec(insertPostTable, title, body, author, createdAt)
+}
+
+// ブログポストを全件取得
+func dbGetAll() []Post {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルからデータを取得
+	var posts []Post
+	db.Select(&posts, selectPostTable)
+	return posts
+}
+
+// ブログポストを1件取得
+func dbGetOne(id int) Post {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルからデータを取得
+	var post Post
+	db.Get(&post, selectPostTable+" WHERE id = ?", id)
+	return post
+}
+
+// ブログポストを更新
+func dbUpdate(id int, title string, body string, author string, createdAt string) {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルのデータを更新
+	db.MustExec(updatePostTable, title, body, author, createdAt, id)
+}
+
+// ブログポストを削除
+func dbDelete(id int) {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルのデータを削除
+	db.MustExec(deletePostTable, id)
+}
+
+// ブログポストを全削除
+func dbDeleteAll() {
+	db := dbConnect()
+	defer db.Close()
+
+	// ブログポストテーブルのデータを全削除
+	db.MustExec(deleteAllPostTable)
+}
+
