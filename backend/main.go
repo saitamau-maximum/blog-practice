@@ -124,14 +124,9 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		body := r.FormValue("body")
 		author := r.FormValue("author")
 		createdAt := time.Now().Unix()
-		dbInsert(title, body, author, createdAt)
-		// 最後に挿入したデータのIDを取得
-		var id int
-		dbGetLastInsertID := dbConnect()
-		defer dbGetLastInsertID.Close()
-		dbGetLastInsertID.Get(&id, lastInsertID)
+		id := dbInsert(title, body, author, createdAt)
 		// 作成したブログポストを表示
-		http.Redirect(w, r, "/post/"+strconv.Itoa(id), http.StatusFound)
+		http.Redirect(w, r, "/post/"+strconv.FormatInt(id, 10), 301)
 	}
 }
 
@@ -153,12 +148,20 @@ func dbInit() {
 }
 
 // ブログポストを作成
-func dbInsert(title string, body string, author string, createdAt int64) {
+func dbInsert(title string, body string, author string, createdAt int64)  int64 {
 	db := dbConnect()
 	defer db.Close()
 
-	// ブログポストテーブルにデータを挿入
-	db.MustExec(insertPostTable, title, body, author, createdAt)
+	// ブログポストテーブルにデータを挿入　last_insert_rowid()で最後に挿入したデータのIDを取得
+	result, err := db.Exec(insertPostTable, title, body, author, createdAt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return id
 }
 
 // ブログポストを全件取得
