@@ -76,7 +76,7 @@ func main() {
 	http.HandleFunc("/", IndexHandler)
 	// // blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる /blog/createの形式でアクセスされた場合にcreatePostHandlerが呼ばれる
 	http.HandleFunc("/post/", BlogHandler)
-	http.HandleFunc("/post/create", CreatePostHandler)
+	http.HandleFunc("/post/new", CreatePostHandler)
 
 	fmt.Println("http://localhost:8080 で起動しています...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -99,7 +99,8 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 	idInt, err := strconv.Atoi(id)
 	println(idInt)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return
 	}
 	// ブログポストを1件取得
 	post := dbGetOne(idInt)
@@ -122,6 +123,14 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		body := r.FormValue("body")
 		author := r.FormValue("author")
 		createdAt := time.Now().Unix()
+		// フォームに空の項目がある場合はエラーを返す
+		if title == "" || body == "" || author == "" {
+			log.Print("フォームに空の項目があります")
+			createTemplate.ExecuteTemplate(w, "create.html", map[string]interface{}{
+				"Message": "フォームに空の項目があります",
+			})
+			return
+		}
 		id, err := dbInsert(title, body, author, createdAt)
 		if err != nil {
 			log.Print(err)
