@@ -83,6 +83,8 @@ func main() {
 	// blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる /blog/newの形式でアクセスされた場合にcreatePostHandlerが呼ばれる
 	http.HandleFunc("/post/", BlogHandler)
 	http.HandleFunc("/post/new", CreatePostHandler)
+	// /post/delete?id=1の形式でアクセスされた場合にdeletePostHandlerが呼ばれる
+	http.HandleFunc("/post/delete", DeletePostHandler)
 
 	// cssファイルを配信
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(publicPath+"/css"))))
@@ -119,6 +121,7 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// ブログポストをテンプレートに渡す
 	postTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
+		"ID":        post.ID,
 		"Title":     post.Title,
 		"PageTitle": post.Title,
 		"Body":      post.Body,
@@ -155,6 +158,25 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		// 作成したブログポストを表示
 		http.Redirect(w, r, "/post/"+strconv.FormatInt(id, 10), 301)
 	}
+}
+
+func DeletePostHandler(w http.ResponseWriter, r *http.Request) {
+	// /blog/delete?id=1の形式でアクセスされた場合にidを取得
+	id := r.URL.Query().Get("id")
+	// idをint型に変換
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	// ブログポストを削除
+	err = deletePostById(idInt)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	// ブログポスト一覧を表示
+	http.Redirect(w, r, "/", 301)
 }
 
 func dbConnect() *sqlx.DB {
