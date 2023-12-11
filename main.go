@@ -12,11 +12,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const templatePath = "../frontend"
-const layoutPath = "../frontend/layout.html"
+const templatePath = "./templates"
+const layoutPath = templatePath + "/layout.html"
 
 const (
-	dbPath = "../db/db.sqlite3"
+	dbPath = "./db.sqlite3"
 	//ブログポストテーブルを作成するSQL文
 	createPostTableQuery = `CREATE TABLE IF NOT EXISTS posts (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
