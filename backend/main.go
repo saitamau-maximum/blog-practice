@@ -48,7 +48,7 @@ type Post struct {
 	Title     string `db:"title"`
 	Body      string `db:"body"`
 	Author    string `db:"author"`
-	CreatedAt int64 `db:"created_at"`
+	CreatedAt int64  `db:"created_at"`
 }
 
 var (
@@ -72,7 +72,11 @@ func main() {
 	db = dbConnect()
 	defer db.Close()
 	// データベースの初期化
-	dbInit()
+	err := initDB()
+	if err != nil {
+		// データベースの初期化に失敗した場合は終了
+		log.Fatal(err)
+	}
 	http.HandleFunc("/", IndexHandler)
 	// // blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる /blog/createの形式でアクセスされた場合にcreatePostHandlerが呼ばれる
 	http.HandleFunc("/post/", BlogHandler)
@@ -84,7 +88,7 @@ func main() {
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// ブログポストを全件取得
-	posts := dbGetAll()
+	posts := getAllPosts()
 	// ブログポストをテンプレートに渡す
 	indexTemplate.ExecuteTemplate(w, "index.html", map[string]interface{}{
 		"Posts": posts,
@@ -103,7 +107,11 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// ブログポストを1件取得
-	post := dbGetOne(idInt)
+	post, err := getPostById(idInt)
+	if err != nil {
+		log.Print(err)
+		return
+	}
 	// ブログポストをテンプレートに渡す
 	postTemplate.ExecuteTemplate(w, "post.html", map[string]interface{}{
 		"Title":     post.Title,
@@ -131,10 +139,10 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		id, err := dbInsert(title, body, author, createdAt)
+		id, err := insertPost(title, body, author, createdAt)
 		if err != nil {
 			log.Print(err)
-			return 
+			return
 		}
 		// 作成したブログポストを表示
 		http.Redirect(w, r, "/post/"+strconv.FormatInt(id, 10), 301)
@@ -150,7 +158,7 @@ func dbConnect() *sqlx.DB {
 	return db
 }
 
-func dbInit() error {
+func initDB() error {
 	// ブログポストテーブルを作成
 	_, err := db.Exec(createPostTableQuery)
 	if err != nil {
@@ -162,7 +170,7 @@ func dbInit() error {
 }
 
 // ブログポストを作成
-func dbInsert(title string, body string, author string, createdAt int64) (int64, error) {
+func insertPost(title string, body string, author string, createdAt int64) (int64, error) {
 	// ブログポストテーブルにデータを挿入　last_insert_rowid()で最後に挿入したデータのIDを取得
 	result, err := db.Exec(insertPostQuery, title, body, author, createdAt)
 	if err != nil {
@@ -180,7 +188,7 @@ func dbInsert(title string, body string, author string, createdAt int64) (int64,
 }
 
 // ブログポストを全件取得
-func dbGetAll() []Post {
+func getAllPosts() []Post {
 	// ブログポストテーブルからデータを取得
 	var posts []Post
 	db.Select(&posts, selectAllPostsQuery)
@@ -192,15 +200,20 @@ func dbGetAll() []Post {
 }
 
 // ブログポストを1件取得
-func dbGetOne(id int) Post {
+func getPostById(id int) (Post, error) {
 	// ブログポストテーブルからデータを取得
 	var post Post
-	db.Get(&post, selectPostByIdQuery, id)
-	return post
+	err := db.Get(&post, selectPostByIdQuery, id)
+	if err != nil {
+		log.Print(err)
+		// InternalServerErrorを返す
+		return Post{}, err
+	}
+	return post, nil
 }
 
 // ブログポストを更新
-func dbUpdate(id int, title string, body string, author string, createdAt string) error {
+func updatePost(id int, title string, body string, author string, createdAt int64) error {
 	// ブログポストテーブルのデータを更新
 	_, err := db.Exec(updatePostQuery, title, body, author, createdAt, id)
 	if err != nil {
@@ -212,7 +225,7 @@ func dbUpdate(id int, title string, body string, author string, createdAt string
 }
 
 // ブログポストを削除
-func dbDelete(id int) error {
+func deletePostById(id int) error {
 	// ブログポストテーブルのデータを削除
 	_, err := db.Exec(deletePostQuery, id)
 	if err != nil {
@@ -224,7 +237,7 @@ func dbDelete(id int) error {
 }
 
 // ブログポストを全削除
-func dbDeleteAll() error {
+func deleteAllPosts() error {
 	// ブログポストテーブルのデータを全削除
 	_, err := db.Exec(deleteAllPostsQuery)
 	if err != nil {
