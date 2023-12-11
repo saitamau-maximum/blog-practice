@@ -14,6 +14,7 @@ import (
 
 const templatePath = "./templates"
 const layoutPath = templatePath + "/layout.html"
+const publicPath = "./public"
 
 const (
 	dbPath = "./db.sqlite3"
@@ -84,7 +85,7 @@ func main() {
 	http.HandleFunc("/post/new", CreatePostHandler)
 
 	// cssファイルを配信
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("../frontend/css"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir(publicPath+"/css"))))
 
 	fmt.Println("http://localhost:8080 で起動しています...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
