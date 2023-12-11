@@ -79,9 +79,12 @@ func main() {
 		log.Fatal(err)
 	}
 	http.HandleFunc("/", IndexHandler)
-	// // blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる /blog/createの形式でアクセスされた場合にcreatePostHandlerが呼ばれる
+	// blog表示用のハンドラーを追加　/blog/idの形式でアクセスされた場合にblogHandlerが呼ばれる /blog/newの形式でアクセスされた場合にcreatePostHandlerが呼ばれる
 	http.HandleFunc("/post/", BlogHandler)
 	http.HandleFunc("/post/new", CreatePostHandler)
+
+	// cssファイルを配信
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("../frontend/css"))))
 
 	fmt.Println("http://localhost:8080 で起動しています...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
