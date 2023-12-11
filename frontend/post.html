@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
+    <a href="/">戻る</a>
     <h1>{{.Title}}</h1>
-    <p>by {{.Author}} on {{.CreatedAt}}</p>
+    <p>by {{.Author}} on {{.CreatedAt | date}}</p>
     <p>{{.Body}}</p>
   </body>
 </html>
