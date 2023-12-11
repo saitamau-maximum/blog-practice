@@ -93,7 +93,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	//ブログポストをテンプレートに渡す
 	indexTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
 		"Posts": posts,
-		"Title": "ブログポスト一覧",
+		"PageTitle": "ブログポスト一覧",
 	})
 
 }
@@ -116,6 +116,7 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 	// ブログポストをテンプレートに渡す
 	postTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
 		"Title":     post.Title,
+		"PageTitle": post.Title,
 		"Body":      post.Body,
 		"Author":    post.Author,
 		"CreatedAt": post.CreatedAt,
@@ -126,7 +127,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// GETリクエストの場合はテンプレートを表示
 		createTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
-			"Title": "ブログポスト作成",
+			"PageTitle": "ブログポスト作成",
 		})
 	} else if r.Method == "POST" {
 		// POSTリクエストの場合はブログポストを作成
