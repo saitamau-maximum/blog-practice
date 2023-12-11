@@ -13,6 +13,7 @@ import (
 )
 
 const templatePath = "../frontend"
+const layoutPath = "../frontend/layout.html"
 
 const (
 	dbPath = "../db/db.sqlite3"
@@ -60,11 +61,11 @@ var (
 		},
 	}
 
-	indexTemplate = template.Must(template.New("index.html").Funcs(funcDate).ParseFiles(templatePath + "/index.html"))
+	indexTemplate = template.Must(template.New("layout.html").Funcs(funcDate).ParseFiles(layoutPath, templatePath+"/index.html"))
 
-	postTemplate = template.Must(template.New("post.html").Funcs(funcDate).ParseFiles(templatePath + "/post.html"))
+	postTemplate = template.Must(template.New("layout.html").Funcs(funcDate).ParseFiles(layoutPath, templatePath+"/post.html"))
 
-	createTemplate = template.Must(template.New("create.html").ParseFiles(templatePath + "/create.html"))
+	createTemplate = template.Must(template.New("layout.html").ParseFiles(layoutPath, templatePath+"/create.html"))
 )
 
 func main() {
@@ -87,11 +88,12 @@ func main() {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	// ブログポストを全件取得
+	//ブログポストを全件取得
 	posts := getAllPosts()
-	// ブログポストをテンプレートに渡す
-	indexTemplate.ExecuteTemplate(w, "index.html", map[string]interface{}{
+	//ブログポストをテンプレートに渡す
+	indexTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
 		"Posts": posts,
+		"Title": "ブログポスト一覧",
 	})
 
 }
@@ -101,7 +103,6 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/post/"):]
 	// idをint型に変換
 	idInt, err := strconv.Atoi(id)
-	println(idInt)
 	if err != nil {
 		log.Print(err)
 		return
@@ -113,7 +114,7 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// ブログポストをテンプレートに渡す
-	postTemplate.ExecuteTemplate(w, "post.html", map[string]interface{}{
+	postTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
 		"Title":     post.Title,
 		"Body":      post.Body,
 		"Author":    post.Author,
@@ -124,7 +125,9 @@ func BlogHandler(w http.ResponseWriter, r *http.Request) {
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// GETリクエストの場合はテンプレートを表示
-		createTemplate.Execute(w, nil)
+		createTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
+			"Title": "ブログポスト作成",
+		})
 	} else if r.Method == "POST" {
 		// POSTリクエストの場合はブログポストを作成
 		title := r.FormValue("title")
@@ -134,7 +137,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		// フォームに空の項目がある場合はエラーを返す
 		if title == "" || body == "" || author == "" {
 			log.Print("フォームに空の項目があります")
-			createTemplate.ExecuteTemplate(w, "create.html", map[string]interface{}{
+			createTemplate.ExecuteTemplate(w, "layout.html", map[string]interface{}{
 				"Message": "フォームに空の項目があります",
 			})
 			return
